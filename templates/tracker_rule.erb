@@ -1,0 +1,28 @@
+<%= @spath %> {
+  daily
+  missingok
+  rotate 1
+  nocompress
+  notifempty
+  create 0766 www-data www-data
+  sharedscripts
+  prerotate
+    sleep 20
+  endscript
+  postrotate
+    sleep 1s
+    if [ -f /var/run/nginx.pid ]; then
+      kill -USR1 $(cat /var/run/nginx.pid)
+    fi
+    now_time=$(date +%Y%m%d%H%M)
+    source_file=$(basename <%= @spath %>)
+    dest_dir=<%= @dpath %>
+    tmp_file="<%= @hostname %>-"$source_file".$now_time"
+    tmp_dir="$dest_dir"-tmp
+    [ ! -d $dest_dir ] && mkdir -p $dest_dir
+    [ ! -d $tmp_dir ] && mkdir -p $tmp_dir
+    mv -f <%= @spath %>.1 $tmp_dir/$tmp_file
+    cd $tmp_dir && tar -czf $tmp_file.tar.gz $tmp_file --remove-files && mv $tmp_file.tar.gz $dest_dir/
+    chmod 0776 $dest_dir/*
+  endscript
+}
